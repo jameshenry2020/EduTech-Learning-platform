@@ -1,16 +1,17 @@
 from pathlib import Path
 import environ
-import os
+from datetime import timedelta
 
-env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
-)
+
+env = environ.Env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(BASE_DIR / ".env")
+
+
+SECRET_KEY = env('SECRET_KEY')
 
 ALLOWED_HOSTS = []
 
@@ -22,14 +23,15 @@ DJANGO_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+SITE_ID=1
 
 THIRD_PARTY_APPS=[
    'rest_framework',
    "corsheaders",
-    'djoser',
     'rest_framework_simplejwt.token_blacklist',
 ]
 
@@ -80,11 +82,58 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.users.authentication.CustomJwtAuthentication',
+        'rest_framework.authentication.SessionAuthentication'
     ],
 }
 
+AUTH_USER_MODEL='users.CustomUser'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    "AUTH_COOKIE":"jwt_access",
+    "AUTH_COOKIE_SECURE":True,
+    "AUTH_COOKIE_HTTPONLY":True,
+    "AUTH_COOKIE_DOMAIN":None,
+    "AUTH_COOKIE_SAMESITE":"None",
+    "AUTH_COOKIE_PATH":"/",
+    "AUTH_COOKIE_REFRESH":"jwt_refresh",
+    'AUTH_COOKIE_ACCESS_MAX_AGE':60 * 30,
+    'AUTH_COOKIE_REFRESH_MAX_AGE':60 * 60 * 24
+}
+
+# DJOSER = {
+#     'LOGIN_FIELD': 'email',
+#     'USER_CREATE_PASSWORD_RETYPE': True,
+#     'SEND_ACTIVATION_EMAIL': True,
+#     'ACTIVATION_URL': 'auth/activate/{uid}/{token}/',
+#     'SERIALIZERS': {
+#         'user_create': 'apps.users.serializers.CustomUserCreateSerializer',
+#         'user_activation': 'apps.users.serializers.CustomActivationSerializer',
+#         'user_create_password_retype': 'djoser.serializers.UserCreatePasswordRetypeSerializer',
+#     },
+#     'EMAIL':{
+#     'activation': 'djoser.email.ActivationEmail',
+#     'confirmation': 'djoser.email.ConfirmationEmail',
+#     'password_reset': 'djoser.email.PasswordResetEmail',
+#     'password_changed_confirmation': 'djoser.email.PasswordChangedConfirmationEmail',
+#     'username_changed_confirmation': 'djoser.email.UsernameChangedConfirmationEmail',
+#     'username_reset': 'djoser.email.UsernameResetEmail',
+#     }
+
+# }
+
 WSGI_APPLICATION = 'edutech.wsgi.application'
+
+
+GOOGLE_CLIENT_ID=env('GOOGLE_CLIENT')
+GOOGLE_CLIENT_SECRET=env('GOOGLE_SECRET')
+SERVER_PASSWORD=env('SECRET_PASSWORD')
 
 
 
@@ -107,6 +156,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -123,6 +174,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES = [BASE_DIR / "staticfiles"]
+STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
